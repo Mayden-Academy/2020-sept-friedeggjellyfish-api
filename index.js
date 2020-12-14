@@ -32,13 +32,18 @@ app.post('/login', (req, res) => {
     if (req.body.email === '') {
         return res.send('Email must not be empty');
     } else {
-        const regEx = /^([0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\w]*[0-9a-zA-Z]\.)+[a-zA-Z]{2,9})$/;
-        if (!req.body.email.match(regEx)) {
+        const regExEmail = /^([0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\w]*[0-9a-zA-Z]\.)+[a-zA-Z]{2,9})$/;
+        if (!req.body.email.match(regExEmail)) {
             return res.send('Email must be a valid email address');
         }
     }
     if (req.body.password === '') {
         return res.send('Password must not empty');
+    } else {
+        const regExPass = /[a-zA-Z0-9]{8,}/;
+        if (!req.body.password.match(regExPass)) {
+            return res.send('Your password must have at least 8 characters');
+        }
     }
 
 
@@ -56,12 +61,6 @@ app.post('/login', (req, res) => {
 
     res.json({access_token: token});
 })
-
-// mongoose.connect('mongodb://localhost:27017', {
-//     useNewUrlParser: true,
-//     useUnifiedTopology: true,
-// });
-
 
 let getUsers = (db, callback) => {
     let collection = db.collection('users');
