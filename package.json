@@ -1,0 +1,25 @@
+{
+  "name": "2020-sept-friedeggjellyfish-api",
+  "version": "1.0.0",
+  "description": "project template repo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mayden-Academy/2020-sept-friedeggjellyfish-api.git"
+  },
+  "author": "FriedEggJellyfish",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mayden-Academy/2020-sept-friedeggjellyfish-api/issues"
+  },
+  "homepage": "https://github.com/Mayden-Academy/2020-sept-friedeggjellyfish-api#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "express-jwt": "^6.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.11.7"
+  }
+}
