@@ -15,9 +15,47 @@ app.use(bodyParser.urlencoded({extended: false}));
 const url = "mongodb://root:password@localhost:27017";
 
 const jwtCheck = expressjwt({
-    secret: 'secretkey',
+    secret: 'SECRET_KEY',
     algorithms: ['HS256']
 });
+
+const Users = [
+    {name: 'dany', password: 'password', email: 'dany@test.com', desc: ''},
+    {name: 'Joseph', password: 'password', email: 'joseph@test.com', desc: ''}
+];
+
+app.post('/login', (req, res) => {
+
+    if (req.body.name === '') {
+        return res.send('Username must not be empty');
+    }
+    if (req.body.email === '') {
+        return res.send('Email must not be empty');
+    } else {
+        const regEx = /^([0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\w]*[0-9a-zA-Z]\.)+[a-zA-Z]{2,9})$/;
+        if (!req.body.email.match(regEx)) {
+            return res.send('Email must be a valid email address');
+        }
+    }
+    if (req.body.password === '') {
+        return res.send('Password must not empty');
+    }
+
+
+    let User = Users.find((u) => {
+        return u.name === req.body.name && u.password === req.body.password;
+    })
+
+    if (!User) {
+        return res.send('No user found');
+    }
+
+    let token = jwt.sign({
+        name: User.name
+    }, 'SECRET_KEY', {expiresIn: '12 hours'});
+
+    res.json({access_token: token});
+})
 
 // mongoose.connect('mongodb://localhost:27017', {
 //     useNewUrlParser: true,
@@ -48,7 +86,7 @@ let addUser = (db, newUser) => {
 
 app.get('/users', async (req, res) => {
     MongoClient.connect(url, {useNewUrlParser: true, useUnifiedTopology: true}, (error, client) => {
-        console.log('yes, you are connected');
+        console.log('connected to MongoDB');
         let db = client.db('TIL');
         getUsers(db, (documentsReturned) => {
             console.log(documentsReturned);
@@ -59,7 +97,7 @@ app.get('/users', async (req, res) => {
 
 app.get('/posts', async (req, res) => {
     MongoClient.connect(url, {useNewUrlParser: true, useUnifiedTopology: true}, (error, client) => {
-        console.log('yes, you are connected');
+        console.log('connected to MongoDB');
         let db = client.db('TIL');
         getPosts(db, (documentsReturned) => {
             console.log(documentsReturned);
@@ -68,7 +106,7 @@ app.get('/posts', async (req, res) => {
     })
 })
 
-app.post('/users', (req, res) => {
+app.post('/users', jwtCheck, (req, res) => {
     let newName = req.body.name;
     let newEmail = req.body.email;
     let newPassword = req.body.password;
