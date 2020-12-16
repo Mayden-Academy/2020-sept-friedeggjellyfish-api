@@ -1,133 +1,145 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const app = express();
-const MongoClient = require('mongodb').MongoClient;
-const ObjectId = require('mongodb').ObjectId;
-const jwt = require('jsonwebtoken');
-const expressjwt = require('express-jwt');
-const bodyParser = require('body-parser');
-// const mongoose = require('mongoose');
-const port = 3005;
+const cors = require('cors');
+const bodyParser = require('body-parser').json();
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(cors({origin: '*'}));
+app.options('*', cors({origin: '*'}));
 
-
-const url = "mongodb://root:password@localhost:27017";
-
-const jwtCheck = expressjwt({
-    secret: 'SECRET_KEY',
-    algorithms: ['HS256']
+mongoose.connect('mongodb://localhost:27017/TIL', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
 });
 
-const Users = [
-    {name: 'dany', password: 'password', email: 'dany@test.com', desc: ''},
-    {name: 'Joseph', password: 'password', email: 'joseph@test.com', desc: ''}
-];
+const postSchema = new mongoose.Schema({
+  title: String,
+  author: String,
+});
 
-app.post('/login', (req, res) => {
+//create User blueprint/Schema
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "What's your name"],
+  },
+  email: {
+    type: String,
+    required: [true, "What's your email"],
+  },
+  profile: {
+    type: String,
+    max: 500,
+  },
 
-    if (req.body.name === '') {
-        return res.send('Username must not be empty');
+  posts: postSchema,
+  rating: {
+    type: Number,
+    min: 0,
+    max: 5,
+  },
+  review: String,
+});
+
+const User = mongoose.model('user', userSchema);
+
+//now we create a new user from the User Model/schema above
+
+app.get('/', (req, res) => {
+  Find(res);
+});
+// user.save();
+
+app.post('/signup', bodyParser, (req, res) => {
+  console.log('!', req.body);
+  const name = req.body.name;
+  const email = req.body.email;
+  const password = req.body.password;
+  const profile = req.body.profile;
+  user = new User({
+    name,
+    email,
+    password,
+    profile,
+  });
+  user.save();
+  res.redirect('/');
+});
+
+const Post = mongoose.model('post', postSchema);
+const user9 = new User({
+  name: 'Bing Hope',
+  email: 'bing@gmail.com',
+});
+
+function InsertMany() {
+  User.insertMany([user1, user2], err => {
+    if (err) console.log(err);
+    else {
+      console.log('successfully saved all');
     }
-    if (req.body.email === '') {
-        return res.send('Email must not be empty');
-    } else {
-        const regExEmail = /^([0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\w]*[0-9a-zA-Z]\.)+[a-zA-Z]{2,9})$/;
-        if (!req.body.email.match(regExEmail)) {
-            return res.send('Email must be a valid email address');
-        }
-    }
-    if (req.body.password === '') {
-        return res.send('Password must not empty');
-    } else {
-        const regExPass = /[a-zA-Z0-9]{8,}/;
-        if (!req.body.password.match(regExPass)) {
-            return res.send('Your password must have at least 8 characters');
-        }
-    }
-
-
-    let User = Users.find((u) => {
-        return u.name === req.body.name && u.password === req.body.password;
-    })
-
-    if (!User) {
-        return res.send('No user found');
-    }
-
-    let token = jwt.sign({
-        name: User.name
-    }, 'SECRET_KEY', {expiresIn: '12 hours'});
-
-    res.json({access_token: token});
-})
-
-let getUsers = (db, callback) => {
-    let collection = db.collection('users');
-    collection.find({}).toArray((error, docs) => {
-        console.log('displaying users');
-        callback(docs);
-    })
+  });
 }
 
-let getPosts = (db, callback) => {
-    let collection = db.collection('posts');
-    collection.find({}).toArray((error, docs) => {
-        console.log('displaying users');
-        callback(docs);
-    })
-}
+// How do we read from our database (find)
+// use find() method - takes 2 param
 
-let addUser = (db, newUser) => {
-    let collection = db.collection('users');
-    collection.insertOne(newUser);
-}
+function Find(res) {
+  User.find((err, users) => {
+    if (err) console.log(err);
+    else {
+      res.json(users);
+      console.log(users);
 
-app.get('/users', async (req, res) => {
-    MongoClient.connect(url, {useNewUrlParser: true, useUnifiedTopology: true}, (error, client) => {
-        console.log('connected to MongoDB');
-        let db = client.db('TIL');
-        getUsers(db, (documentsReturned) => {
-            console.log(documentsReturned);
-            res.json(documentsReturned);
-        })
-    })
-})
+      //good practice to close the db connection
+      // mongoose.connection.close();
 
-app.get('/posts', async (req, res) => {
-    MongoClient.connect(url, {useNewUrlParser: true, useUnifiedTopology: true}, (error, client) => {
-        console.log('connected to MongoDB');
-        let db = client.db('TIL');
-        getPosts(db, (documentsReturned) => {
-            console.log(documentsReturned);
-            res.json(documentsReturned);
-        })
-    })
-})
-
-app.post('/users', jwtCheck, (req, res) => {
-    let newName = req.body.name;
-    let newEmail = req.body.email;
-    let newPassword = req.body.password;
-    let newDesc = req.body.description;
-
-    let newUser = {
-        name: newName,
-        email: newEmail,
-        password: newPassword,
-        description: newDesc
+      users.forEach(user => console.log(user.name));
     }
-    MongoClient.connect(url, {useNewUrlParser: true, useUnifiedTopology: true}, (error, client) => {
-        console.log('connected to Mongo');
-        let db = client.db('TIL');
-        addUser(db, newUser);
-    });
-    res.json('Welcome to TIL community');
-})
+  });
+}
 
+//updating data using updateOne()
+//takes 3 params - how to find the document you want to update, what update/changes it needs , error handling function
 
+function Update() {
+  User.updateOne(
+    {_id: '5fd6193a98b98a0dc884804b'},
+    {name: 'king kong'},
+    err => {
+      if (err) console.log(err);
+      else console.log('successfully updated');
+    }
+  );
+}
 
+// User.deleteOne({_id: '5fd61520c7f1f30d8a674f32', err => {   if (err) console.log(err);
+//     else console.log('successfully updated');
+//   }});
 
+function deleteMany() {
+  User.deleteMany({name: 'mary Hope'}, err => {
+    if (err) console.log(err);
+    else console.log('successfully deleted');
+  });
+}
 
+//embedding schemas into another schema so that you can form relationships
 
-app.listen(port, () => {console.log(`Listening on http://localhost:${port}`)})
+// user9.save();
+
+const post = new Post({
+  title: 'How I learnt PHP',
+  author: 'Me',
+  user: user9,
+});
+
+post.save();
+
+const userPost = new User({
+  name: 'amy',
+  email: 'amy@hotmail.com',
+  posts: post,
+});
+
+app.listen(3001);
