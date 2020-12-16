@@ -5,6 +5,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser').json();
 const jwt = require('jsonwebtoken');
 const expressjwt = require('express-jwt');
+const bcrypt = require('bcrypt');
 
 app.use(cors({origin: '*'}));
 app.options('*', cors({origin: '*'}));
@@ -24,28 +25,32 @@ const postSchema = new mongoose.Schema({
   author: String,
 });
 
-//create User blueprint/Schema
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    // required: [true, "What's your name"],
+    required: true,
+    unique: true,
   },
   email: {
     type: String,
     // required: [true, "What's your email"],
   },
+
+  password: {
+    type: String,
+    required: true,
+    minlength: [6, 'Password needs at lease 6 characters'],
+  },
   profile: {
     type: String,
     max: 500,
   },
+});
 
-  posts: postSchema,
-  rating: {
-    type: Number,
-    min: 0,
-    max: 5,
-  },
-  review: String,
+userSchema.pre('save', async function (next) {
+  const salt = await bcrypt.genSalt();
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
 const User = mongoose.model('user', userSchema);
@@ -63,6 +68,7 @@ app.post('/signup', bodyParser, (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const profile = req.body.profile;
+
   user = new User({
     name,
     email,
@@ -81,12 +87,6 @@ app.post('/signup', bodyParser, (req, res) => {
     {expiresIn: maxAge}
   );
   res.json({access_token: token});
-});
-
-const Post = mongoose.model('post', postSchema);
-const user9 = new User({
-  name: 'Bing Hope',
-  email: 'bing@gmail.com',
 });
 
 function InsertMany() {
