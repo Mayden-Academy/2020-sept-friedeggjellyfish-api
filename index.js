@@ -98,17 +98,12 @@ function InsertMany() {
   });
 }
 
-// How do we read from our database (find)
 // use find() method - takes 2 param
-
 function Find(res) {
   User.find((err, users) => {
     if (err) console.log(err);
     else {
       res.json(users);
-      console.log(users);
-
-      //good practice to close the db connection
       // mongoose.connection.close();
 
       users.forEach(user => console.log(user.name));
@@ -142,21 +137,5 @@ function deleteMany() {
 }
 
 //embedding schemas into another schema so that you can form relationships
-
-// user9.save();
-
-const post = new Post({
-  title: 'How I learnt PHP',
-  author: 'Me',
-  user: user9,
-});
-
-post.save();
-
-const userPost = new User({
-  name: 'amy',
-  email: 'amy@hotmail.com',
-  posts: post,
-});
 
 app.listen(3001);
