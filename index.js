@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const app = express();
 const cors = require('cors');
 const bodyParser = require('body-parser').json();
+const jwt = require('jsonwebtoken');
+const expressjwt = require('express-jwt');
 
 app.use(cors({origin: '*'}));
 app.options('*', cors({origin: '*'}));
@@ -10,6 +12,11 @@ app.options('*', cors({origin: '*'}));
 mongoose.connect('mongodb://localhost:27017/TIL', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+});
+
+const jwtCheck = expressjwt({
+  secret: 'secretkey',
+  algorithms: ['HS256'],
 });
 
 const postSchema = new mongoose.Schema({
@@ -21,11 +28,11 @@ const postSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, "What's your name"],
+    // required: [true, "What's your name"],
   },
   email: {
     type: String,
-    required: [true, "What's your email"],
+    // required: [true, "What's your email"],
   },
   profile: {
     type: String,
@@ -63,7 +70,17 @@ app.post('/signup', bodyParser, (req, res) => {
     profile,
   });
   user.save();
-  res.redirect('/');
+  //   res.redirect('/welcome');
+  const maxAge = 3 * 24 * 60 * 60;
+  let token = jwt.sign(
+    {
+      sub: user.id,
+      username: user.username,
+    },
+    'secretkey',
+    {expiresIn: maxAge}
+  );
+  res.json({access_token: token});
 });
 
 const Post = mongoose.model('post', postSchema);
