@@ -3,13 +3,22 @@ const mongoose = require('mongoose');
 const app = express();
 const cors = require('cors');
 const bodyParser = require('body-parser').json();
+const port = 3001;
+const jwt = require('jsonwebtoken');
+const expressjwt = require('express-jwt');
 
 app.use(cors({origin: '*'}));
 app.options('*', cors({origin: '*'}));
 
-mongoose.connect('mongodb://localhost:27017/TIL', {
+mongoose.connect('mongodb://root:password@localhost:27017', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  dbName: 'TIL'
+})
+
+const jwtCheck = expressjwt({
+  secret: 'secretkey',
+  algorithms: ['HS256']
 });
 
 const postSchema = new mongoose.Schema({
@@ -63,7 +72,13 @@ app.post('/signup', bodyParser, (req, res) => {
     profile,
   });
   user.save();
-  res.redirect('/');
+  //res.redirect('/');
+  const maxAge = 3 * 24 * 60 * 60;
+  let token = jwt.sign({
+    sub: user.id,
+    username: user.username
+  }, 'secretkey', {expiresIn: maxAge});
+  res.json({access_token: token});
 });
 
 const Post = mongoose.model('post', postSchema);
@@ -142,4 +157,6 @@ const userPost = new User({
   posts: post,
 });
 
-app.listen(3001);
+app.listen(port, () => {
+  console.log(`Listening on http://localhost:${port}`);
+})
